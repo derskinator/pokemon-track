@@ -40,6 +40,8 @@ TARGET_PRODUCTS = {
     "Journey Together Booster Box": "94603823",
     "Journey Together ETB":         "94603822",
     "Scarlet & Violet 151 ETB":     "88867374",
+    "Ascended Heroes ETB":        "95082118",
+"Ascended Heroes Bundle":     "95120834",
 }
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"}
