@@ -10,15 +10,29 @@ except KeyError:
     print("ERROR: DISCORD_WEBHOOK env variable not set!", flush=True)
     sys.exit(1)
 
-CHECK_INTERVAL = 120
+CHECK_INTERVAL = 30  # scan every 30 seconds
 
+# All Target stores in San Diego county
 SD_TARGET_STORES = {
-    "Mission Valley": "1267",
-    "Chula Vista":    "1335",
-    "Kearny Mesa":    "2459",
-    "La Mesa":        "2154",
-    "Santee":         "2336",
-    "Mira Mesa":      "1379",
+    "Mission Valley":    "1267",
+    "Chula Vista":       "1335",
+    "Kearny Mesa":       "2459",
+    "La Mesa":           "2154",
+    "Santee":            "2336",
+    "Mira Mesa":         "1379",
+    "Point Loma":        "2589",
+    "North Park":        "3031",
+    "South Park":        "3030",
+    "Oceanside":         "1346",
+    "Escondido":         "1348",
+    "El Cajon":          "1356",
+    "National City":     "2459",
+    "Poway":             "1350",
+    "San Marcos":        "1351",
+    "Encinitas":         "1352",
+    "Vista":             "1353",
+    "Carlsbad":          "1354",
+    "Clairemont":        "2460",
 }
 
 TARGET_PRODUCTS = {
@@ -37,7 +51,12 @@ def ts():
 def send_alert(product, store, qty):
     try:
         r = requests.post(DISCORD_WEBHOOK, json={
-            "content": f"Target drop! {product} @ {store} - {qty} units"
+            "content": (
+                f"🔴 **Target drop!**\n"
+                f"📦 {product}\n"
+                f"📍 {store} — **{qty} units**\n"
+                f"⏰ {ts()}"
+            )
         }, timeout=5)
         print(f"  Alert sent: {r.status_code}", flush=True)
     except Exception as e:
@@ -66,17 +85,19 @@ print(f"Scanning every {CHECK_INTERVAL}s", flush=True)
 
 while True:
     try:
-        print(f"[{ts()}] Scanning...", flush=True)
+        print(f"[{ts()}] Scanning {len(TARGET_PRODUCTS) * len(SD_TARGET_STORES)} store/product combos...", flush=True)
+        found = 0
         for product, tcin in TARGET_PRODUCTS.items():
             for store, store_id in SD_TARGET_STORES.items():
                 key = f"{tcin}_{store_id}"
                 qty = check_stock(tcin, store_id)
                 if qty > 0 and seen.get(key, 0) == 0:
-                    print(f"  FOUND: {product} @ {store} ({qty})", flush=True)
+                    print(f"  FOUND: {product} @ Target {store} ({qty})", flush=True)
                     send_alert(product, f"Target {store}", qty)
+                    found += 1
                 seen[key] = qty
-                time.sleep(2)
-        print(f"[{ts()}] Done. Waiting {CHECK_INTERVAL}s...", flush=True)
+                time.sleep(1)
+        print(f"[{ts()}] Done. {found} new hits. Waiting {CHECK_INTERVAL}s...", flush=True)
         time.sleep(CHECK_INTERVAL)
     except Exception as e:
         print(f"Loop error: {e}", flush=True)
