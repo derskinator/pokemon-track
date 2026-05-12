@@ -23,20 +23,25 @@ TARGET_PRODUCTS = {
     "SV 151 Booster Pack":           "1001304528",
 }
 
-HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"}
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+    "Accept": "application/json",
+    "Origin": "https://www.target.com",
+    "Referer": "https://www.target.com/",
+}
 seen = {}
 
 def ts():
     return datetime.now().strftime("%H:%M:%S")
 
-def send_alert(product, status, url):
+def send_alert(product, status, tcin):
     try:
         requests.post(DISCORD_WEBHOOK, json={
             "content": (
                 f"🌐 **Target.com restock!**\n"
                 f"📦 {product}\n"
                 f"📊 {status}\n"
-                f"🔗 https://www.target.com/p/-/A-{url}\n"
+                f"🔗 https://www.target.com/p/-/A-{tcin}\n"
                 f"⏰ {ts()}"
             )
         }, timeout=5)
@@ -46,27 +51,30 @@ def send_alert(product, status, url):
 
 def check_online(tcin):
     url = (
-        f"https://redsky.target.com/redsky_aggregations/v1/web/pdp_client_v1"
-        f"?key=9f36aeafbe60771e321a7cc95a78140772ab3e96"
+        f"https://redsky.target.com/redsky_aggregations/v1/web/pdp_fulfillment_v1"
+        f"?key=ff457966e64d5e877fdbad070f276d18ecec4a01"
         f"&tcin={tcin}"
         f"&store_id=1267"
+        f"&store_positions_store_id=1267"
+        f"&has_store_positions_store_id=true"
         f"&zip=92101&state=CA&latitude=32.71&longitude=-117.15"
-        f"&scheduled_delivery_store_id=1267"
         f"&pricing_store_id=1267"
+        f"&has_pricing_store_id=true"
+        f"&is_bot=false"
     )
     try:
         r = requests.get(url, headers=HEADERS, timeout=10)
         data = r.json()
-        avail = (
+        shipping = (
             data.get("data", {})
                 .get("product", {})
                 .get("fulfillment", {})
                 .get("shipping_options", {})
                 .get("availability_status", "")
         )
-        print(f"  {tcin}: {avail}", flush=True)
-        if avail in ("IN_STOCK", "LIMITED_STOCK", "INSTOCK"):
-            return avail
+        print(f"  {tcin}: '{shipping}'", flush=True)
+        if shipping in ("IN_STOCK", "LIMITED_STOCK", "INSTOCK"):
+            return shipping
     except Exception as e:
         print(f"  Error {tcin}: {e}", flush=True)
     return None
@@ -81,7 +89,7 @@ while True:
             status = check_online(tcin)
             prev = seen.get(tcin)
             if status and not prev:
-                print(f"  ONLINE: {product} — {status}", flush=True)
+                print(f"  RESTOCK: {product} — {status}", flush=True)
                 send_alert(product, status, tcin)
             seen[tcin] = status
             time.sleep(1)
