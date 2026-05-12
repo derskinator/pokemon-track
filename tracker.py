@@ -42,6 +42,7 @@ TARGET_PRODUCTS = {
     "Scarlet & Violet 151 ETB":     "88867374",
     "Ascended Heroes ETB":        "95082118",
 "Ascended Heroes Bundle":     "95120834",
+    "Pokemon Perfect Order Booster Pack": "1011040115",
 }
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"}
